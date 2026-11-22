@@ -50,6 +50,52 @@ export const cmll_algs_justin: { [id: string]: string[] } = {
     l_back_commutator:  ["R' U2 R' D' R U2 R' D R2"],
 }
 
+// Case names as written on the same sheet.
+export const cmll_case_names: { [id: string]: string } = {
+    o_adjacent_swap:    "O Adjacent Swap",
+    o_diagonal_swap:    "O Diagonal Swap",
+    h_columns:          "H Columns",
+    h_rows:             "H Rows",
+    h_column:           "H Column",
+    h_row:              "H Row",
+    pi_right_bar:       "Pi Right Bar",
+    pi_back_slash:      "Pi Backslash",
+    pi_x_checkerboard:  "Pi X Checkerboard",
+    pi_forward_slash:   "Pi Forward Slash",
+    pi_columns:         "Pi Columns",
+    pi_left_bar:        "Pi Left Bar",
+    u_forward_slash:    "U Forward Slash",
+    u_back_slash:       "U Backslash",
+    u_front_row:        "U Front Row",
+    u_rows:             "U Rows",
+    u_x_checkerboard:   "U X Checkerboard",
+    u_back_row:         "U Back Row",
+    t_left_bar:         "T Left Bar",
+    t_right_bar:        "T Right Bar",
+    t_rows:             "T Rows",
+    t_front_row:        "T Front Row",
+    t_back_row:         "T Back Row",
+    t_columns:          "T Columns",
+    s_left_bar:         "S Left Bar (O)",
+    s_x_checkerboard:   "S X Checker (B)",
+    s_forward_slash:    "S Fwd Slash (R)",
+    s_columns:          "S Columns (F)",
+    s_right_bar:        "S Right Bar (D)",
+    s_back_slash:       "S Backslash (L)",
+    as_right_bar:       "As Right Bar (O)",
+    as_columns:         "As Columns (L)",
+    as_back_slash:      "As Backslash (B)",
+    as_x_checkerboard:  "As X Checker (R)",
+    as_forward_slash:   "As Fwd Slash (F)",
+    as_left_bar:        "As Left Bar (D)",
+    l_mirror:           "L Mirror",
+    l_inverse:          "L Inverse",
+    l_pure:             "L Pure",
+    l_front_commutator: "L Frnt Commutator",
+    l_diag:             "L Diagonal",
+    l_back_commutator:  "L Bck Commutator",
+}
+
 const AUFS = ["", "U", "U'", "U2"]
 
 const cornersSolved = (c: CubieCube) =>
@@ -87,6 +133,13 @@ export const normalizeAlg = (alg: string) => alg.replace(/[’‘`´]/g, "'").re
 
 // Case ids are either "<cmll_name>" or "nmcll-<group>-<cmll_name>".
 const cmllNameOf = (caseId: string) => caseId.split("-").pop() || caseId
+
+// Display name for a case id, falling back to a title-cased id ("as_left_bar" -> "As Left Bar").
+export const cmllCaseName = (caseId: string): string => {
+    const id = cmllNameOf(caseId)
+    if (id === "solved") return "CMLL Skip" // corners already solved; at most an AUF
+    return cmll_case_names[id] || id.split("_").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")
+}
 
 // Text to show under "Case" for a revealed case.
 // `caseAlg` is the alg the trainer used to set the case up (pre-AUF + default alg).

@@ -1,5 +1,5 @@
 import { cmll_algs_raw, lookup_algset } from "./Algs";
-import { cmll_algs_justin, cmllRevealText, findPreAuf, normalizeAlg } from "./CmllReveal";
+import { cmll_algs_justin, cmll_case_names, cmllCaseName, cmllRevealText, findPreAuf, normalizeAlg } from "./CmllReveal";
 import { CubieCube, MoveSeq } from "./CubeLib";
 
 const AUFS = ["", "U", "U'", "U2"]
@@ -56,4 +56,12 @@ it('falls back to the default alg for unknown cases', () => {
 
 it('prints the no-AUF reveal for each case', () => {
     console.log(cases.map(([id, alg]) => `${id}: ${cmllRevealText(id, alg)}`).join("\n"))
+})
+
+it('names every CMLL case, including NMCLL ids', () => {
+    expect(Object.keys(cmll_case_names).sort()).toEqual(cases.map(([id]) => id).sort())
+    expect(cmllCaseName("as_left_bar")).toBe("As Left Bar (D)")
+    expect(cmllCaseName("nmcll-o_1-pi_columns")).toBe("Pi Columns")
+    expect(cmllCaseName("some_new_case")).toBe("Some New Case")
+    expect(cmllCaseName("solved")).toBe("CMLL Skip")
 })

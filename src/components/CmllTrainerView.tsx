@@ -20,7 +20,7 @@ import CaseSelectDialog from './CaseSelectView';
 import { cmll_algs_raw, nmcll_display_parity, nmcll_to_cmll_mapping, ollcp_algs_raw } from '../lib/Algs';
 
 import CaseVisualizer from './CaseVisualizer';
-import { cmllRevealText } from '../lib/CmllReveal';
+import { cmllCaseName, cmllRevealText } from '../lib/CmllReveal';
 import { CubeSim2D, CubeSimFlat3D } from './CubeSim2D';
 import { Face } from '../lib/Defs';
 
@@ -230,6 +230,7 @@ export function CmllTrainerView(props: { state: AppState, dispatch: React.Dispat
 
     let alg = ""
     let caseAlg = ""
+    let caseName = ""
     let setup = ""
     if (state.case.desc.length === 4) {
       setup = state.case.desc[3].algs[0]
@@ -237,6 +238,7 @@ export function CmllTrainerView(props: { state: AppState, dispatch: React.Dispat
     if (reveal && state.case.desc.length >= 3) {
       caseAlg = new MoveSeq(state.case.desc[1].algs[0] + " " + state.case.desc[2].algs[0]).collapse().toString()
       alg = cmllRevealText(state.case.desc[2].id, caseAlg)
+      caseName = cmllCaseName(state.case.desc[2].id)
     }
     const colorSchemeColors = state.colorScheme.getColorsForOri(state.cube.ori)
     return (
@@ -328,6 +330,9 @@ export function CmllTrainerView(props: { state: AppState, dispatch: React.Dispat
       :
       <Grid item xs={9}>
         <Box paddingBottom={1} lineHeight={1} >
+          <Typography color="text.secondary" style={{fontSize: 16, fontWeight: 500, marginBottom: 6}}>
+            { caseName }
+          </Typography>
           <Typography style={{whiteSpace: 'pre-line', fontSize: 18, fontWeight: 500}}>
             { alg }
           </Typography>
