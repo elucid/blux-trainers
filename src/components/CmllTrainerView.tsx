@@ -1,6 +1,7 @@
 import React, { Fragment } from 'react'
 
 import CubeSim from './CubeSim'
+import { CmllCubeController } from '../smartcube/CmllCubeController'
 import { useTheme, FormControl, FormLabel, Typography, Button } from '@mui/material';
 
 import makeStyles from '@mui/styles/makeStyles';
@@ -289,6 +290,7 @@ export function CmllTrainerView(props: { state: AppState, dispatch: React.Dispat
     </Grid>
 
     <Box height = {5}/>
+    <CmllCubeController state={state} dispatch={dispatch} />
 
     <Paper className={classes.paper} elevation={2}>
     <Grid container spacing={2}>

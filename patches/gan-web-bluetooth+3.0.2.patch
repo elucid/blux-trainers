@@ -1,0 +1,105 @@
+diff --git a/node_modules/gan-web-bluetooth/dist/cjs/index.cjs b/node_modules/gan-web-bluetooth/dist/cjs/index.cjs
+index fff2191..478d9d0 100644
+--- a/node_modules/gan-web-bluetooth/dist/cjs/index.cjs
++++ b/node_modules/gan-web-bluetooth/dist/cjs/index.cjs
+@@ -1044,13 +1044,22 @@ class GanGen4ProtocolDriver {
+         if (eventType == 0x01) { // MOVE
+             if (this.lastSerial != -1) { // Accept move events only after first facelets state event received
+                 this.lastLocalTimestamp = timestamp;
+-                let cubeTimestamp = msg.getBitWord(16, 32, true);
+-                let serial = this.serial = msg.getBitWord(48, 16, true);
+-                let direction = msg.getBitWord(64, 2);
+-                let face = [2, 32, 8, 1, 16, 4].indexOf(msg.getBitWord(66, 6));
+-                let move = "URFDLB".charAt(face) + " '".charAt(direction);
+-                // put move event into FIFO buffer
+-                if (face >= 0) {
++                // One notification can carry several consecutive 72-bit MOVE records. Decode all of them in
++                // order, rather than only the first (ported from MIT poliva/smartcube-web-bluetooth d517e49).
++                // Records share the notification's host timestamp; each keeps its own cube timestamp/serial.
++                let msgBitLen = eventMessage.length * 8;
++                for (let off = 0; off + 72 <= msgBitLen && msg.getBitWord(off, 8) == 0x01; off += 72) {
++                    let cubeTimestamp = msg.getBitWord(off + 16, 32, true);
++                    let serial = msg.getBitWord(off + 48, 16, true);
++                    let direction = msg.getBitWord(off + 64, 2);
++                    let face = [2, 32, 8, 1, 16, 4].indexOf(msg.getBitWord(off + 66, 6));
++                    let move = "URFDLB".charAt(face) + " '".charAt(direction);
++                    if (face < 0) {
++                        if (off == 0) this.serial = serial; // unchanged 3.0.2 handling of a lone record
++                        break; // trailing bytes are not another move record
++                    }
++                    this.serial = serial;
++                    // put move event into FIFO buffer
+                     this.moveBuffer.push({
+                         type: "MOVE",
+                         serial: serial,
+diff --git a/node_modules/gan-web-bluetooth/dist/esm/index.mjs b/node_modules/gan-web-bluetooth/dist/esm/index.mjs
+index 865df42..6d90cda 100644
+--- a/node_modules/gan-web-bluetooth/dist/esm/index.mjs
++++ b/node_modules/gan-web-bluetooth/dist/esm/index.mjs
+@@ -1042,13 +1042,22 @@ class GanGen4ProtocolDriver {
+         if (eventType == 0x01) { // MOVE
+             if (this.lastSerial != -1) { // Accept move events only after first facelets state event received
+                 this.lastLocalTimestamp = timestamp;
+-                let cubeTimestamp = msg.getBitWord(16, 32, true);
+-                let serial = this.serial = msg.getBitWord(48, 16, true);
+-                let direction = msg.getBitWord(64, 2);
+-                let face = [2, 32, 8, 1, 16, 4].indexOf(msg.getBitWord(66, 6));
+-                let move = "URFDLB".charAt(face) + " '".charAt(direction);
+-                // put move event into FIFO buffer
+-                if (face >= 0) {
++                // One notification can carry several consecutive 72-bit MOVE records. Decode all of them in
++                // order, rather than only the first (ported from MIT poliva/smartcube-web-bluetooth d517e49).
++                // Records share the notification's host timestamp; each keeps its own cube timestamp/serial.
++                let msgBitLen = eventMessage.length * 8;
++                for (let off = 0; off + 72 <= msgBitLen && msg.getBitWord(off, 8) == 0x01; off += 72) {
++                    let cubeTimestamp = msg.getBitWord(off + 16, 32, true);
++                    let serial = msg.getBitWord(off + 48, 16, true);
++                    let direction = msg.getBitWord(off + 64, 2);
++                    let face = [2, 32, 8, 1, 16, 4].indexOf(msg.getBitWord(off + 66, 6));
++                    let move = "URFDLB".charAt(face) + " '".charAt(direction);
++                    if (face < 0) {
++                        if (off == 0) this.serial = serial; // unchanged 3.0.2 handling of a lone record
++                        break; // trailing bytes are not another move record
++                    }
++                    this.serial = serial;
++                    // put move event into FIFO buffer
+                     this.moveBuffer.push({
+                         type: "MOVE",
+                         serial: serial,
+diff --git a/node_modules/gan-web-bluetooth/src/gan-cube-protocol.ts b/node_modules/gan-web-bluetooth/src/gan-cube-protocol.ts
+index 9a60aa8..dbb43b3 100644
+--- a/node_modules/gan-web-bluetooth/src/gan-cube-protocol.ts
++++ b/node_modules/gan-web-bluetooth/src/gan-cube-protocol.ts
+@@ -923,15 +923,25 @@ class GanGen4ProtocolDriver implements GanProtocolDriver {
+             if (this.lastSerial != -1) { // Accept move events only after first facelets state event received
+ 
+                 this.lastLocalTimestamp = timestamp;
+-                let cubeTimestamp = msg.getBitWord(16, 32, true);
+-                let serial = this.serial = msg.getBitWord(48, 16, true);
++                // One notification can carry several consecutive 72-bit MOVE records. Decode all of them in
++                // order, rather than only the first (ported from MIT poliva/smartcube-web-bluetooth d517e49).
++                // Records share the notification's host timestamp; each keeps its own cube timestamp/serial.
++                let msgBitLen = eventMessage.length * 8;
++                for (let off = 0; off + 72 <= msgBitLen && msg.getBitWord(off, 8) == 0x01; off += 72) {
++                    let cubeTimestamp = msg.getBitWord(off + 16, 32, true);
++                    let serial = msg.getBitWord(off + 48, 16, true);
++
++                    let direction = msg.getBitWord(off + 64, 2);
++                    let face = [2, 32, 8, 1, 16, 4].indexOf(msg.getBitWord(off + 66, 6));
++                    let move = "URFDLB".charAt(face) + " '".charAt(direction);
+ 
+-                let direction = msg.getBitWord(64, 2);
+-                let face = [2, 32, 8, 1, 16, 4].indexOf(msg.getBitWord(66, 6));
+-                let move = "URFDLB".charAt(face) + " '".charAt(direction);
++                    if (face < 0) {
++                        if (off == 0) this.serial = serial; // unchanged 3.0.2 handling of a lone record
++                        break; // trailing bytes are not another move record
++                    }
++                    this.serial = serial;
+ 
+-                // put move event into FIFO buffer
+-                if (face >= 0) {
++                    // put move event into FIFO buffer
+                     this.moveBuffer.push({
+                         type: "MOVE",
+                         serial: serial,

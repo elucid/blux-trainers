@@ -22,6 +22,7 @@
 - Scrambles are all random state. Solver is Roux-optimized with M and r moves as first-class citizens, with up to 25 different solutions provided.
 
 - You can control the virtual cube with keyboard (CStimer mapping). You can also drag on the cube to change its perspective.
+- In this fork, CMLL also has an [experimental smart cube controller and hardware-free simulator](docs/smart-cube.md). Target: GAN **i Carry 4**; pairing reported, slice tracking under hardware validation.
 
 - You can bookmark your favorite cases and these will be saved in your browser.
 

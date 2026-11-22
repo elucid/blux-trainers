@@ -124,7 +124,7 @@ function SliderView(props: {
       max={slider.r}
       value={slider.value}
       onChange={handleChange}
-      onFocus={(evt) => evt.target.blur()}
+      onFocus={(evt: React.FocusEvent<HTMLElement>) => evt.target.blur()}
       style={{fontSize: "1.2rem"}}
       />
     </Box>
