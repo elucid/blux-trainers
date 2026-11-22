@@ -2,7 +2,7 @@ import React, { Fragment } from 'react'
 
 import CubeSim from './CubeSim'
 import { CmllCubeController } from '../smartcube/CmllCubeController'
-import { useTheme, FormControl, FormLabel, Typography, Button } from '@mui/material';
+import { useTheme, FormControl, FormControlLabel, FormLabel, Switch, Typography, Button } from '@mui/material';
 
 import makeStyles from '@mui/styles/makeStyles';
 
@@ -58,6 +58,8 @@ const useStyles = makeStyles(theme => ({
       width: "100%"
     },
 }))
+
+const showCaseKey = "cmllShowCase"
 
 const cmll_name_to_alg = Object.fromEntries(cmll_algs_raw)
 const nmcll_display_algs = nmcll_to_cmll_mapping.map( ([x, y], i) => {
@@ -201,15 +203,14 @@ export function CmllTrainerView(props: { state: AppState, dispatch: React.Dispat
       </Box>
     )
 
-    // The reveal is tied to the current case, so it stays shown while turning the cube
-    // and is hidden as soon as a new case is generated (Next / space). Redo keeps the
-    // same case scramble, so it stays revealed too.
-    const [revealedCase, setRevealedCase] = React.useState<unknown>(null)
-    const reveal = revealedCase !== null && revealedCase === state.case.state
-    const setReveal = (value: boolean) => setRevealedCase(value ? state.case.state : null)
-    const handleClick = () => {
-      setReveal(true)
+    // "Show case" is a persistent toggle: it stays on across turns, redo and new cases
+    // until switched off, and is remembered across reloads.
+    const [reveal, setRevealState] = React.useState(() => window.localStorage.getItem(showCaseKey) === "true")
+    const setReveal = (value: boolean) => {
+      setRevealState(value)
+      window.localStorage.setItem(showCaseKey, String(value))
     }
+    const toggleReveal = () => setReveal(!reveal)
     const handleNext = () => {
       dispatch({type: "key", content: "#space"})
     }
@@ -219,7 +220,7 @@ export function CmllTrainerView(props: { state: AppState, dispatch: React.Dispat
         state.keyMapping.handle(event, dispatch);
         // intercept keyboard event for local control
         if (event.key === "/") {
-          setReveal(true)
+          toggleReveal()
         }
       }
       window.addEventListener('keydown', downHandler);
@@ -315,20 +316,19 @@ export function CmllTrainerView(props: { state: AppState, dispatch: React.Dispat
 
       <Box display="flex">
               <Box>
-              <Box className={classes.title} >
+              <Box className={classes.title} style={{cursor: "pointer"}} onClick={toggleReveal}
+                title="Show or hide the case (/)">
                 Case
               </Box> </Box>
       </Box>
+      <FormControlLabel
+        control={<Switch size="small" checked={reveal} onChange={toggleReveal}
+          onFocus={(evt) => evt.target.blur()} inputProps={{ "aria-label": "Show case" }} />}
+        label={<Typography variant="body2">Show</Typography>}
+      />
       </Grid>
-      { (!reveal) ?
-      <Grid item xs={3}>
-      <Button onFocus={(evt) => evt.target.blur() } className={classes.button}
-      size="medium" variant="outlined" color="primary" onClick={handleClick}> { /* className={classes.margin}>  */ }
-          Show
-      </Button>
-      </Grid>
-      :
       <Grid item xs={9}>
+      { reveal && <>
         <Box paddingBottom={1} lineHeight={1} >
           <Typography color="text.secondary" style={{fontSize: 16, fontWeight: 500, marginBottom: 6}}>
             { caseName }
@@ -350,9 +350,8 @@ export function CmllTrainerView(props: { state: AppState, dispatch: React.Dispat
                   cubeOptions={{}}
                 />
         </Box>
-
+      </>}
       </Grid>
-      }
     </Grid>
     <Box height={30}/>
 
@@ -379,7 +378,7 @@ export function CmllTrainerView(props: { state: AppState, dispatch: React.Dispat
     <Box>
     <FormControl component="fieldset" className={classes.prompt}>
       <FormLabel component="legend">
-         Usage: Press space for next case. Enter to redo. / to reveal.
+         Usage: Press space for next case. Enter to redo. / to show or hide the case.
       </FormLabel>
     </FormControl>
     </Box>
