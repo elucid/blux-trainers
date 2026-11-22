@@ -4,7 +4,7 @@ import { act } from 'react-dom/test-utils';
 import { getInitialState, reducer } from '../reducers/Reducer';
 import { CubieCube } from '../lib/CubeLib';
 import { connectGanCube } from './gan';
-import { alignment } from './alignment';
+import { alignment, physicalCenters } from './alignment';
 import { CmllCubeController } from './CmllCubeController';
 import { CubeEvent, CubeConnection } from './types';
 
@@ -33,6 +33,7 @@ function mountController(scramble = 'R U F M2') {
             act(() => { select.value = String(ms); select.dispatchEvent(new Event('change', { bubbles: true })); });
         },
         trace: () => root.querySelector('pre')?.textContent,
+        text: () => root.textContent || '',
         state: () => latest,
         unmount: () => act(() => { ReactDOM.unmountComponentAtNode(root); })
     };
@@ -68,6 +69,33 @@ test('simulated moves operate the existing CMLL case, including after a slice', 
     }
 });
 
+test('a scramble ending in M2 still expects the selected grip', async () => {
+    jest.useFakeTimers();
+    Object.defineProperty(window, 'isSecureContext', { configurable: true, value: true });
+    Object.defineProperty(navigator, 'bluetooth', { configurable: true, value: {} });
+    let receive!: (event: CubeEvent) => void;
+    (connectGanCube as jest.Mock).mockImplementationOnce(listener => {
+        receive = listener;
+        return Promise.resolve({ name: 'GAN mock', disconnect: async () => {} });
+    });
+    const controller = mountController('R U F M2');
+    controller.state().cube.ori = 'YR';
+    try {
+        await controller.click('Connect GAN cube');
+        expect(controller.text()).toMatch(/top yellow.*front red.*right green/);
+        // GAN calls the yellow center D and the red center R; in a YR grip they're U and F.
+        act(() => {
+            receive({ type: 'move', move: 'D', serial: 1, cubeTimestamp: 100, localTimestamp: 100 });
+            receive({ type: 'move', move: 'R', serial: 5, cubeTimestamp: 500, localTimestamp: 500 });
+            jest.advanceTimersByTime(500);
+        });
+        expect(controller.state().cube.history.map(m => m.name)).toEqual(['U', 'F']);
+    } finally {
+        controller.unmount();
+        jest.useRealTimers();
+    }
+});
+
 test('a controller turn can finish CMLL while the LSE edges are still unsolved', async () => {
     jest.useFakeTimers();
     const controller = mountController("M2 R'");
@@ -93,7 +121,7 @@ test('relaxed window pairs turns 85 ms apart without changing the 60 ms default'
         return Promise.resolve({ name: 'GAN mock', disconnect: async () => {} });
     });
     const controller = mountController();
-    const { toSensor } = alignment(controller.state().cube.ori, controller.state().cube.state.tp);
+    const { toSensor } = alignment(controller.state().cube.ori, physicalCenters([]));
     const attempt = () => act(() => {
         receive({ type: 'move', move: toSensor("R'"), serial: 3, cubeTimestamp: 100, localTimestamp: 250 });
         jest.advanceTimersByTime(85);

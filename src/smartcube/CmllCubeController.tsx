@@ -2,7 +2,7 @@ import React, { useCallback, useLayoutEffect, useMemo, useRef, useState } from '
 import { Box, Button, Checkbox, FormControlLabel, Paper, Typography } from '@mui/material';
 import { Action, AppState } from '../Types';
 import { connectGanCube } from './gan';
-import { alignment } from './alignment';
+import { alignment, physicalCenters } from './alignment';
 import { createMoveNormalizer, DEFAULT_SLICE_WINDOW_MS } from './moves';
 import { connectSimulator, SimulatedCube } from './simulator';
 import { useCubeConnection } from './useCubeConnection';
@@ -15,7 +15,9 @@ export function CmllCubeController({ state, dispatch }: { state: AppState; dispa
     const [tracing, setTracing] = useState(false);
     const [report, setReport] = useState('');
     const sim = useRef<SimulatedCube | null>(null);
-    const grip = alignment(state.cube.ori, state.cube.state.tp);
+    const history = state.cube.history;
+    const centers = useMemo(() => physicalCenters(history), [history]);
+    const grip = alignment(state.cube.ori, centers);
     const latestGrip = useRef(grip);
     useLayoutEffect(() => { latestGrip.current = grip; });
     const mapper = useMemo(() => createMoveNormalizer((move, sources) => {
@@ -47,7 +49,6 @@ export function CmllCubeController({ state, dispatch }: { state: AppState; dispa
     function simulate(...moves: string[]) {
         if (sim.current) sim.current.turn(...moves.map(grip.toSensor));
     }
-    const history = state.cube.history;
 
     return <Box mb={1} onKeyDown={e => {
         // Keyboard activation of a controller button isn't Space/Enter for the trainer.
@@ -78,7 +79,7 @@ export function CmllCubeController({ state, dispatch }: { state: AppState; dispa
                     </Typography>
                     <details>
                         <summary>How to hold the cube</summary>
-                        <Typography variant="body2">Match the centers, not the scrambled stickers. In the default 3D view the two side faces you see are front (on the left of the picture) and right. Dragging the camera does not change which face is front.</Typography>
+                        <Typography variant="body2">Match the centers, not the scrambled stickers. Every case starts in the selected orientation, even when the on-screen top center is the opposite color: hold by the left and right blocks, and ignore where the scramble left the M slice. In the default 3D view the two side faces you see are front (on the left of the picture) and right. Dragging the camera does not change which face is front.</Typography>
                         <Typography variant="body2">For M′, hold the left and right layers still and turn the middle so the front center comes to the top. M takes the top center to the front. Keep that new grip; don’t rotate the whole cube back. The cue updates to match a recognized slice.</Typography>
                         <Typography variant="body2">The i Carry 4 cannot sense a whole-cube rotation. After a regrip, match the cue and click Realign to display. If a move was wrong, press Enter to redo the case first; realignment doesn’t undo turns.</Typography>
                     </details>
