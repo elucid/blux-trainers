@@ -20,6 +20,7 @@ import CaseSelectDialog from './CaseSelectView';
 import { cmll_algs_raw, nmcll_display_parity, nmcll_to_cmll_mapping, ollcp_algs_raw } from '../lib/Algs';
 
 import CaseVisualizer from './CaseVisualizer';
+import { cmllRevealText } from '../lib/CmllReveal';
 import { CubeSim2D, CubeSimFlat3D } from './CubeSim2D';
 import { Face } from '../lib/Defs';
 
@@ -226,20 +227,14 @@ export function CmllTrainerView(props: { state: AppState, dispatch: React.Dispat
     });
 
     let alg = ""
+    let caseAlg = ""
     let setup = ""
     if (state.case.desc.length === 4) {
       setup = state.case.desc[3].algs[0]
     }
     if (reveal && state.case.desc.length >= 3) {
-      const moves = new MoveSeq(state.case.desc[1].algs[0] + state.case.desc[2].algs[0] )
-      let moves_c = moves.collapse()
-      if (moves_c.moves.length > 0) {
-        if (moves_c.moves[0].name[0] === "U") {
-          alg += "(" + moves_c.moves[0].name + ") ";
-          moves_c.moves = moves_c.moves.slice(1)
-        }
-        alg += moves_c.toString()
-      }
+      caseAlg = new MoveSeq(state.case.desc[1].algs[0] + " " + state.case.desc[2].algs[0]).collapse().toString()
+      alg = cmllRevealText(state.case.desc[2].id, caseAlg)
     }
     const colorSchemeColors = state.colorScheme.getColorsForOri(state.cube.ori)
     return (
@@ -342,7 +337,7 @@ export function CmllTrainerView(props: { state: AppState, dispatch: React.Dispat
                 <CaseVisualizer
                   name=""
                   size={100}
-                  alg={alg}
+                  alg={caseAlg}
                   mask="cmll"
                   color={colorSchemeColors}
                   cubeOptions={{}}
