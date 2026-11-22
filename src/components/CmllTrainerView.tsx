@@ -201,10 +201,12 @@ export function CmllTrainerView(props: { state: AppState, dispatch: React.Dispat
       </Box>
     )
 
-    React.useEffect( () =>  {
-      setReveal(false) // todo: drive this from props. now there's a delay which causes the answer to leak for a split second
-    }, [ state ])
-    const [reveal, setReveal] = React.useState(false)
+    // The reveal is tied to the current case, so it stays shown while turning the cube
+    // and is hidden as soon as a new case is generated (Next / space). Redo keeps the
+    // same case scramble, so it stays revealed too.
+    const [revealedCase, setRevealedCase] = React.useState<unknown>(null)
+    const reveal = revealedCase !== null && revealedCase === state.case.state
+    const setReveal = (value: boolean) => setRevealedCase(value ? state.case.state : null)
     const handleClick = () => {
       setReveal(true)
     }
